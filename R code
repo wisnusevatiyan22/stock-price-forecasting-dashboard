@@ -1,0 +1,152 @@
+library(shiny)
+library(fpp2)
+library(gridExtra)
+library(ggplot2)
+
+ui <- fluidPage(
+  titlePanel("Peramalan Harga Saham Bank"),
+  h4('Created by : Wisnu'),
+  h5('Statistika Bisnis'),
+  h6('Institut Teknologi Sepuluh Nopember'),
+
+  sidebarLayout(
+    sidebarPanel(
+      
+      imageOutput(outputId = 'bank_img'),
+      
+      selectInput(inputId = 'bank_name', label = 'pilihan bank', choices = c('BRI', 'BNI', 'MANDIRI'), selected = 'BRI'),
+      radioButtons(inputId = 'model', label = 'pilihan model ARIMA', 
+                   choices = c('ARIMA 1,1,0', 'ARIMA 1,1,1', 'ARIMA 1,1,2'), choiceValues = 'ARIMA 1,1,0')
+      
+    ),
+    
+    mainPanel(
+      
+      h4(strong('Plot Time Series Harga Saham Bank')),
+      plotOutput(outputId = 'saham_plot'),
+      
+      h4(strong('Plot Peramalan')),
+      plotOutput(outputId = 'peramalan_plot')
+      
+    )
+  ),
+  
+  h4(strong('Parameter dan Kebaikan Model')),
+  fluidRow(verbatimTextOutput(outputId = 'akurasi_tabel')),
+  
+  h4(strong('Hasil Peramalan')),
+  fluidRow(dataTableOutput(outputId = 'peramalan_tabel' )),
+  
+  h4(strong('Deskripsi Projek')),
+  p(style = 'text-align: Center; font-size = 25px', strong('Proyek ini merupakan analisis ', em('ARIMA dan Sarima'),
+                                                           'pada kasus harga saham dari 3 bank besar di Indonesia dengan 
+                                                           kriteria nilai Likelihood tertinggi dan nilai AIC terendah'))
+  
+  
+)
+
+# Define server logic ----
+server <- function(input, output) {
+  
+  BBRI <- read.csv("F:/SEMESTER 5/ramalan/data saham/Saham/Semua/BBRI.csv", sep = ',', header=TRUE)
+  BBRI_2<-BBRI[c('date','high')]
+  
+  BBNI <- read.csv("F:/SEMESTER 5/ramalan/data saham/Saham/Semua/BBNI.csv")
+  BBNI_2 <- BBNI[c('date','high')]
+  
+  BMRI <- read.csv("F:/SEMESTER 5/ramalan/data saham/Saham/Semua/BMRI.csv")
+  BMRI_2 <- BMRI[c('date','high')]
+  
+  output$bank_img <- renderImage({
+    
+    list(src = "C:/Users/ACER/Pictures/Logo-ITS-Institut-Teknologi-Sepuluh-November-Original-removebg-preview.png",
+         width = "100%",
+         height = 350)
+    
+  }, deleteFile = F)
+  
+  output$saham_plot <- renderPlot({
+    
+    p1 <- autoplot(ts(BBRI_2$high), ylab = 'Harga Saham BRI')
+    p2 <- autoplot(ts(BBNI_2$high), ylab = 'Harga Saham BNI')
+    p3 <- autoplot(ts(BMRI_2$high), ylab = 'Harga Saham Mandiri')
+    
+    grid.arrange(p1, p2, p3, nrow=3)
+    }) 
+    
+  output$peramalan_plot <- renderPlot({
+    
+    if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,0')
+      {mod <- arima(BBRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,1')
+      {mod <- arima(BBRI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,2')
+      {mod <- arima(BBRI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,0')
+      {mod <- arima(BBNI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,1')
+      {mod <- arima(BBNI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,2')
+      {mod <- arima(BBNI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,0')
+      {mod <- arima(BMRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,1')
+      {mod <- arima(BMRI_2$high, order=c(1,1,1), include.mean = F)}
+    else{mod <- arima(BMRI_2$high, order=c(1,1,2), include.mean = F)}
+    
+    p3 <- autoplot(forecast(mod, h=90)) + ylab('Harga Saham') + ggtitle('peramalan 3 bulan ke depan' )
+    p3
+      })
+  
+  output$akurasi_tabel <- renderPrint({
+    
+    if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BBRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BBRI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,2')
+    {mod <- arima(BBRI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BBNI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BBNI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,2')
+    {mod <- arima(BBNI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BMRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BMRI_2$high, order=c(1,1,1), include.mean = F)}
+    else{mod <- arima(BMRI_2$high, order=c(1,1,2), include.mean = F)}
+    
+    mod
+      })
+  
+  output$peramalan_tabel <- renderDataTable({
+    
+    if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BBRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BBRI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BRI' && input$model =='ARIMA 1,1,2')
+    {mod <- arima(BBRI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BBNI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BBNI_2$high, order=c(1,1,1), include.mean = F)}
+    else if(input$bank_name =='BNI' && input$model =='ARIMA 1,1,2')
+    {mod <- arima(BBNI_2$high, order=c(1,1,2), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,0')
+    {mod <- arima(BMRI_2$high, order=c(1,1,0), include.mean = F)}
+    else if(input$bank_name =='MANDIRI' && input$model =='ARIMA 1,1,1')
+    {mod <- arima(BMRI_2$high, order=c(1,1,1), include.mean = F)}
+    else{mod <- arima(BMRI_2$high, order=c(1,1,2), include.mean = F)}
+    
+    hasil <- forecast(mod, h=30)
+    hasil <- as.data.frame(hasil)
+    
+  })
+  
+}
+
+# Run the app ----
+shinyApp(ui = ui, server = server)
