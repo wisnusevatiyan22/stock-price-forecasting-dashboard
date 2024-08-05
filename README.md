@@ -1,2 +1,2 @@
 # stock-price-forecasting-dashboard
-stock price forecasting dashboard using Rshiny
+bank stock price forecasting dashboard using Rshiny
